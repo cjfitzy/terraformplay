@@ -1,0 +1,79 @@
+
+provider "aws" {
+  access_key = var.access_key
+  secret_key = var.secret_key
+  region     = "eu-west-2"
+}
+
+resource "aws_instance" "demo1" {
+  ami           = "ami-0fb391cce7a602d1f"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "made by terraform"
+  }
+}
+
+locals {
+  project_name = "claire"
+}
+
+resource "aws_instance" "demo2" {
+  ami                         = "ami-0fb391cce7a602d1f"
+  instance_type               = "t2.nano"
+  user_data_replace_on_change = true
+  user_data                   = <<-EOF
+        #!/bin/bash
+        sudo apt-get update -y
+        sudo apt install mysql-client -y
+        EOF
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(pathexpand("C:/Users/admin/Downloads/Key1.pem"))
+    host        = aws_instance.demo2.public_ip
+  }
+
+  tags = {
+    Name = "made by terraform!! -${local.project_name}"
+  }
+}
+
+
+resource "aws_security_group" "allow_ssh" {
+  name        = "ssh"
+  vpc_id      = "vpc-0d7b2e6c2b2492b58"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+}
+
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = var.bucket_name
+}
+
+
+
+#Variable attribute types:
+#- string (an empty string is default)
+#- numbers - can be null or 0 
+#- bool - false could be empty
+#- list - incidcated by [] comma seperated. tuples too: ()
+#- map: dicotinaory {} - key vlaue pairs
+#- null can be any
+
+#validation
+
+#the validation block allows you to define conditions that must be my_bucket by the variable 
+
+#sensitive - marking a variable as sensistive vlaue will not be showing in output to cli
+
+#nullable - if nullable is true we can set null in the variable configuration defaults to true
+
+#defults is default is provided the variable used its value if not it will be asked for when running terraform
